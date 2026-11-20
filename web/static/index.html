@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Job Search Buddy</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--line:#2a2e38;--text:#e8eaed;--muted:#9aa1ad;--accent:#2a9d8f;--danger:#e2574c}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line)}
+  header h1{font-size:18px;margin:0}
+  main{max-width:900px;margin:0 auto;padding:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+  input,textarea,select,button{font:inherit;border-radius:6px;border:1px solid var(--line);background:#0f1115;color:var(--text);padding:8px 10px}
+  textarea{width:100%;resize:vertical}
+  button{cursor:pointer;background:var(--accent);border:none;color:#06201c;font-weight:600}
+  button.secondary{background:transparent;border:1px solid var(--line);color:var(--text)}
+  button.danger{background:var(--danger);color:#fff}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:160px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:14px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#22252e}
+  .muted{color:var(--muted)}
+  .hidden{display:none !important}
+  #credits{font-size:13px;color:var(--muted)}
+  pre{white-space:pre-wrap;background:#0f1115;padding:10px;border-radius:6px;border:1px solid var(--line)}
+  .err{color:var(--danger);font-size:13px;margin-top:6px}
+  #detail{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+  #detail .box{background:var(--card);border:1px solid var(--line);border-radius:10px;max-width:700px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Job Search Buddy</h1>
+  <div id="who" class="row" style="gap:8px;align-items:center"></div>
+</header>
+<main>
+  <div id="auth" class="card hidden">
+    <div class="row">
+      <div><label>Email</label><input id="email" type="email"></div>
+      <div><label>Password</label><input id="password" type="password"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="loginBtn">Log in</button>
+      <button id="signupBtn" class="secondary">Sign up</button>
+    </div>
+    <div id="authErr" class="err"></div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card">
+      <label>Your profile / CV (plain text — used for every evaluation and tailored letter)</label>
+      <textarea id="profile" rows="6" placeholder="Paste your CV / background here..."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="saveProfile">Save profile</button>
+        <span id="profileSaved" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Add application</h3>
+      <div class="row">
+        <div><label>Company</label><input id="newCompany"></div>
+        <div><label>Role</label><input id="newRole"></div>
+      </div>
+      <label style="margin-top:8px">Job posting text</label>
+      <textarea id="newPosting" rows="4"></textarea>
+      <div class="row" style="margin-top:8px"><button id="addApp">Add</button></div>
+      <div id="addErr" class="err"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Applications</h3>
+      <table id="appsTable">
+        <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Fit</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="detail" class="hidden"><div class="box">
+  <div class="row" style="justify-content:space-between"><h3 id="detailTitle" style="margin:0"></h3><button class="secondary" id="closeDetail">Close</button></div>
+  <div id="detailBody"></div>
+</div></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let CFG = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    method: opts.method || "GET",
+    headers: opts.body ? { "Content-Type": "application/json" } : {},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+function esc(s) { return (s || "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+async function boot() {
+  CFG = await api("/api/config");
+  if (CFG.mode === "local") {
+    $("#auth").classList.add("hidden");
+    await showApp();
+  } else {
+    try {
+      await refreshMe();
+      await showApp();
+    } catch {
+      $("#auth").classList.remove("hidden");
+    }
+  }
+  wireAuth();
+  wireApp();
+}
+
+async function refreshMe() {
+  const me = await api("/api/me");
+  $("#profile").value = me.profile || "";
+  renderWho(me);
+  return me;
+}
+
+function renderWho(me) {
+  $("#who").innerHTML = CFG.mode === "local" ? "" :
+    `<span id="credits">${me.credits} credits</span>
+     ${CFG.billing_enabled ? Object.entries(CFG.packs).map(([id,p]) =>
+        `<button class="secondary" data-pack="${id}">Buy ${p.label}</button>`).join("") : ""}
+     <button class="secondary" id="logoutBtn">Log out</button>`;
+  if (!CFG.billing_enabled === false) {
+    $("#who").querySelectorAll("[data-pack]").forEach(b =>
+      b.addEventListener("click", () => buy(b.dataset.pack)));
+  }
+  const lo = $("#logoutBtn"); if (lo) lo.addEventListener("click", async () => { await api("/api/logout", {method:"POST"}); location.reload(); });
+}
+
+async function buy(pack) {
+  try {
+    const { url } = await api("/api/billing/checkout", { method: "POST", body: { pack } });
+    location.href = url;
+  } catch (e) { alert(e.message); }
+}
+
+function wireAuth() {
+  $("#loginBtn").onclick = async () => {
+    try { await api("/api/login", {method:"POST", body:{email:$("#email").value, password:$("#password").value}}); location.reload(); }
+    catch (e) { $("#authErr").textContent = e.message; }
+  };
+  $("#signupBtn").onclick = async () => {
+    try { await api("/api/signup", {method:"POST", body:{email:$("#email").value, password:$("#password").value}}); location.reload(); }
+    catch (e) { $("#authErr").textContent = e.message; }
+  };
+}
+
+async function showApp() {
+  $("#app").classList.remove("hidden");
+  await loadApps();
+}
+
+function wireApp() {
+  $("#saveProfile").onclick = async () => {
+    await api("/api/profile", {method:"PUT", body:{profile: $("#profile").value}});
+    $("#profileSaved").textContent = "Saved.";
+    setTimeout(() => $("#profileSaved").textContent = "", 2000);
+  };
+  $("#addApp").onclick = async () => {
+    $("#addErr").textContent = "";
+    try {
+      await api("/api/applications", {method:"POST", body:{
+        company: $("#newCompany").value, role: $("#newRole").value, posting: $("#newPosting").value,
+      }});
+      $("#newCompany").value = $("#newRole").value = $("#newPosting").value = "";
+      await loadApps();
+    } catch (e) { $("#addErr").textContent = e.message; }
+  };
+  $("#closeDetail").onclick = () => $("#detail").classList.add("hidden");
+}
+
+async function loadApps() {
+  const apps = await api("/api/applications");
+  const tbody = $("#appsTable tbody");
+  tbody.innerHTML = apps.map(a => `
+    <tr>
+      <td>${esc(a.company)}</td>
+      <td>${esc(a.role)}</td>
+      <td>
+        <select data-id="${a.id}" class="statusSel">
+          ${CFG.statuses.map(s => `<option value="${s}" ${s===a.status?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </td>
+      <td>${a.fit_score ?? "—"}</td>
+      <td class="row" style="gap:6px">
+        <button class="secondary" data-open="${a.id}">Open</button>
+        <button class="danger" data-del="${a.id}">Delete</button>
+      </td>
+    </tr>`).join("") || `<tr><td colspan="5" class="muted">No applications yet.</td></tr>`;
+
+  tbody.querySelectorAll(".statusSel").forEach(sel =>
+    sel.addEventListener("change", async () => {
+      await api(`/api/applications/${sel.dataset.id}`, {method:"PATCH", body:{status: sel.value}});
+    }));
+  tbody.querySelectorAll("[data-del]").forEach(b =>
+    b.addEventListener("click", async () => {
+      if (!confirm("Delete this application?")) return;
+      await api(`/api/applications/${b.dataset.del}`, {method:"DELETE"});
+      await loadApps();
+    }));
+  tbody.querySelectorAll("[data-open]").forEach(b =>
+    b.addEventListener("click", () => openDetail(apps.find(a => a.id == b.dataset.open))));
+}
+
+function openDetail(a) {
+  $("#detailTitle").textContent = `${a.company} — ${a.role}`;
+  $("#detailBody").innerHTML = `
+    <div class="row" style="margin:10px 0">
+      <button id="evalBtn">Evaluate fit${CFG.mode!=="local" ? ` (${CFG.costs.evaluate} credit)` : ""}</button>
+      <button id="applyBtn">Tailor CV + cover letter${CFG.mode!=="local" ? ` (${CFG.costs.apply} credits)` : ""}</button>
+    </div>
+    <div id="aiErr" class="err"></div>
+    ${a.evaluation ? `<h4>Evaluation (fit: ${a.fit_score})</h4><pre>${esc(a.evaluation)}</pre>` : ""}
+    ${a.cv_bullets ? `<h4>CV bullets</h4><pre>${esc(a.cv_bullets)}</pre>` : ""}
+    ${a.cover_letter ? `<h4>Cover letter</h4><pre>${esc(a.cover_letter)}</pre>` : ""}
+  `;
+  $("#detail").classList.remove("hidden");
+  $("#evalBtn").onclick = () => runAi(a.id, "evaluate", $("#evalBtn"));
+  $("#applyBtn").onclick = () => runAi(a.id, "apply", $("#applyBtn"));
+}
+
+async function runAi(id, action, btn) {
+  btn.disabled = true;
+  $("#aiErr").textContent = "";
+  try {
+    await api(`/api/applications/${id}/${action}`, {method:"POST"});
+    const apps = await api("/api/applications");
+    openDetail(apps.find(a => a.id == id));
+    if (CFG.mode !== "local") refreshMe();
+    loadApps();
+  } catch (e) {
+    $("#aiErr").textContent = e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
