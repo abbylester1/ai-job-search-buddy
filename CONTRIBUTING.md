@@ -1,3 +1,5 @@
+> This is a fork of [ai-job-search](https://github.com/ai-job-search-dev/ai-job-search). Issues/PRs for this fork go to [abbylester1/ai-job-search-buddy](https://github.com/abbylester1/ai-job-search-buddy/issues). Fixes that apply to the core framework are best sent upstream. Linked issue numbers below refer to upstream history.
+
 # Contributing
 
 Thanks for considering a contribution! This repo has a deliberate, narrow philosophy, and most declined PRs are well-executed work that simply didn't know about it. Read this first; it will save you effort and tell you where your work will land best.
@@ -71,7 +73,7 @@ This is a decision, not a dogma: if cross-runtime standards mature to the point 
 - **Personal-use boundaries**: portal skills that touch ToS-restricted sources carry a prominent personal-use-only warning, and CI deliberately makes no live portal requests. Don't "fix" that.
 - **LaTeX changes**: both templates must compile (`lualatex` for the CV, `xelatex` for the cover letter) and hold their exact page counts. CI smoke-checks this.
 
-Questions and proposals are welcome in [Discussions](https://github.com/ai-job-search-dev/ai-job-search/discussions) - an Idea thread costs nothing and can save you building the wrong thing :-)
+Questions and proposals are welcome in [Discussions](https://github.com/abbylester1/ai-job-search-buddy/discussions) - an Idea thread costs nothing and can save you building the wrong thing :-)
 
 [#17]: https://github.com/ai-job-search-dev/ai-job-search/issues/17
 [#30]: https://github.com/ai-job-search-dev/ai-job-search/issues/30

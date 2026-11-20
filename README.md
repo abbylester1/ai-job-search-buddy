@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ai-job-search-dev/ai-job-search/actions/workflows/ci.yml"><img src="https://github.com/ai-job-search-dev/ai-job-search/actions/workflows/ci.yml/badge.svg" alt="CI" height="20"></a>
+  <a href="https://github.com/abbylester1/ai-job-search-buddy/actions/workflows/ci.yml"><img src="https://github.com/abbylester1/ai-job-search-buddy/actions/workflows/ci.yml/badge.svg" alt="CI" height="20"></a>
   &nbsp;
   <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/built_on-Claude_Code-2A9D8F?style=flat" alt="Built on Claude Code" height="20"></a>
   &nbsp;
@@ -13,6 +13,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/43622?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-43622" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/43622/daily" alt="MadsLorentzen%2Fai-job-search | Trendshift" width="250" height="55"/></a>
 </p>
+
+> [!TIP]
+> **AI Job Search Buddy** is maintained by [@abbylester1](https://github.com/abbylester1) as a fork of [ai-job-search](https://github.com/ai-job-search-dev/ai-job-search) by Mads Lorentzen, extended with extra skills. See [Added skills](#added-skills).
 
 <p align="center">
   An AI-powered job application framework built on <a href="https://claude.com/claude-code">Claude Code</a>.<br>
@@ -55,9 +58,9 @@ Sixty-nine tailored applications, twenty first interviews, and one signed contra
 </p>
 
 <p align="center">
-  <a href="https://ko-fi.com/madslorentzen">
-    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Buy me a coffee at ko-fi.com" height="40">
-  </a>
+  <a href="https://github.com/sponsors/abbylester1"><img src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?style=flat&logo=githubsponsors" alt="Sponsor on GitHub" height="28"></a>
+  &nbsp;
+  <a href="https://ko-fi.com/YOUR_KOFI_USERNAME"><img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Buy me a coffee at ko-fi.com" height="28"></a>
 </p>
 
 ## What this is
@@ -445,6 +448,16 @@ ai-job-search/
 
 </details>
 
+## Added skills
+
+Skills added in this fork (beyond upstream) live in `.claude/skills/` and `.claude/commands/`. List each one here:
+
+| Skill / command | What it does |
+|---|---|
+| _(add yours)_ | |
+
+To pull upstream updates: `git fetch upstream && git merge upstream/master`.
+
 ## Contributing
 
 Thinking about a PR? Read [CONTRIBUTING.md](CONTRIBUTING.md) first - it explains what gets merged, what lives in forks, and why.
@@ -452,6 +465,7 @@ Thinking about a PR? Read [CONTRIBUTING.md](CONTRIBUTING.md) first - it explains
 ## Acknowledgements
 
 - [Mikkel Krogholm](https://github.com/mikkelkrogsholm) ([skills repo](https://github.com/mikkelkrogsholm/skills)) for the job search CLI skills
+- [Mads Lorentzen](https://www.linkedin.com/in/mads-lorentzen/) for the original [ai-job-search](https://github.com/ai-job-search-dev/ai-job-search) framework
 - Built with [Claude Code](https://claude.com/claude-code) by [Anthropic](https://anthropic.com)
 
 ## License
