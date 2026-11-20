@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Job Search Buddy</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='58' fill='%231D2048'/%3E%3Cg transform='translate(28,30)'%3E%3Cellipse cx='34' cy='40' rx='30' ry='22' fill='%23E8A33D'/%3E%3Cpath d='M58 32 L84 20 L78 42 Z' fill='%23E8A33D'/%3E%3Ccircle cx='16' cy='24' r='18' fill='%23E8A33D'/%3E%3Cpath d='M2 12 L10 -8 L20 12 Z' fill='%23E8A33D'/%3E%3Cpath d='M16 12 L26 -6 L30 14 Z' fill='%23E8A33D'/%3E%3Cpath d='M0 24 Q12 32 20 24 Q16 38 6 36 Q0 32 0 24 Z' fill='%23F1EFFA'/%3E%3Ccircle cx='9' cy='22' r='2.2' fill='%231D2048'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  :root{--bg:#0f1115;--card:#171a21;--line:#2a2e38;--text:#e8eaed;--muted:#9aa1ad;--accent:#2a9d8f;--danger:#e2574c}
+  :root{--bg:#14162e;--card:#1d2048;--line:#2e335c;--text:#f1effa;--muted:#8d8ab8;--accent:#e8a33d;--accent2:#8c7ae6;--danger:#e2574c}
   *{box-sizing:border-box}
   body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
   header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line)}
   header h1{font-size:18px;margin:0}
   main{max-width:900px;margin:0 auto;padding:24px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
-  input,textarea,select,button{font:inherit;border-radius:6px;border:1px solid var(--line);background:#0f1115;color:var(--text);padding:8px 10px}
+  input,textarea,select,button{font:inherit;border-radius:6px;border:1px solid var(--line);background:#0b0d1f;color:var(--text);padding:8px 10px}
   textarea{width:100%;resize:vertical}
-  button{cursor:pointer;background:var(--accent);border:none;color:#06201c;font-weight:600}
+  button{cursor:pointer;background:var(--accent);border:none;color:#1d2048;font-weight:600}
   button.secondary{background:transparent;border:1px solid var(--line);color:var(--text)}
   button.danger{background:var(--danger);color:#fff}
   button:disabled{opacity:.5;cursor:not-allowed}
@@ -23,11 +24,11 @@
   .row>div{flex:1;min-width:160px}
   table{width:100%;border-collapse:collapse}
   th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:14px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#22252e}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#262b52}
   .muted{color:var(--muted)}
   .hidden{display:none !important}
   #credits{font-size:13px;color:var(--muted)}
-  pre{white-space:pre-wrap;background:#0f1115;padding:10px;border-radius:6px;border:1px solid var(--line)}
+  pre{white-space:pre-wrap;background:#0b0d1f;padding:10px;border-radius:6px;border:1px solid var(--line)}
   .err{color:var(--danger);font-size:13px;margin-top:6px}
   #detail{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
   #detail .box{background:var(--card);border:1px solid var(--line);border-radius:10px;max-width:700px;width:100%;max-height:85vh;overflow:auto;padding:20px}

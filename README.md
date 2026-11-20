@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="assets/readme/hero.svg" alt="AI Job Search. Pip the courier bird carries an application along a flight path to its destination. The job search that runs on your machine." width="100%">
+  <img src="assets/readme/hero.svg" alt="AI Job Search Buddy. Scout the courier fox carries an application along a flight path to its destination. The job search that runs on your machine." width="100%">
 </p>
 
 <p align="center">
   <a href="https://github.com/abbylester1/ai-job-search-buddy/actions/workflows/ci.yml"><img src="https://github.com/abbylester1/ai-job-search-buddy/actions/workflows/ci.yml/badge.svg" alt="CI" height="20"></a>
   &nbsp;
-  <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/built_on-Claude_Code-2A9D8F?style=flat" alt="Built on Claude Code" height="20"></a>
+  <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/built_on-Claude_Code-E8A33D?style=flat" alt="Built on Claude Code" height="20"></a>
   &nbsp;
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2A9D8F?style=flat" alt="MIT license" height="20"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-E8A33D?style=flat" alt="MIT license" height="20"></a>
 </p>
 
 <p align="center">
@@ -399,7 +399,7 @@ ai-job-search/
 │   │   └── upskill/                   # /upskill skill gap analysis and learning plan
 │   └── settings.json                  # Claude Code permissions (shared, scoped)
 ├── .agents/skills/                    # Job portal CLIs you copy in from community-portals (none shipped)
-├── assets/                            # README artwork (Pip the mascot, animated SVG diagrams)
+├── assets/                            # README artwork (Scout the mascot, animated SVG diagrams)
 ├── cv/
 │   └── main_example.tex               # moderncv LaTeX template
 ├── cover_letters/
@@ -471,6 +471,6 @@ Thinking about a PR? Read [CONTRIBUTING.md](CONTRIBUTING.md) first - it explains
 MIT
 
 <p align="center">
-  <img src="assets/mascot/pip_flight_loop.gif" alt="Pip, the courier bird" width="120"><br>
-  <sub>Pip delivers. Good luck out there.</sub>
+  <img src="assets/mascot/scout.svg" alt="Scout, the courier fox" width="120"><br>
+  <sub>Scout delivers. Good luck out there.</sub>
 </p>
