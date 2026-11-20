@@ -6,98 +6,160 @@
 <title>AI Job Search Buddy</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='58' fill='%231D2048'/%3E%3Cg transform='translate(28,30)'%3E%3Cellipse cx='34' cy='40' rx='30' ry='22' fill='%23E8A33D'/%3E%3Cpath d='M58 32 L84 20 L78 42 Z' fill='%23E8A33D'/%3E%3Ccircle cx='16' cy='24' r='18' fill='%23E8A33D'/%3E%3Cpath d='M2 12 L10 -8 L20 12 Z' fill='%23E8A33D'/%3E%3Cpath d='M16 12 L26 -6 L30 14 Z' fill='%23E8A33D'/%3E%3Cpath d='M0 24 Q12 32 20 24 Q16 38 6 36 Q0 32 0 24 Z' fill='%23F1EFFA'/%3E%3Ccircle cx='9' cy='22' r='2.2' fill='%231D2048'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  /* Reference: Linear (linear.app) — one accent, strict contrast steps
-     (page darkest, card above it, input above that), uppercase tracked
-     section labels instead of default heading weight. */
-  :root{--bg:#0b0d1f;--card:#14162e;--field:#191c3b;--line:#30345e;--text:#f1effa;--muted:#8d8ab8;--accent:#e8a33d;--accent-ink:#2a1900;--accent2:#a99bf0;--danger:#e2574c}
+  /* Reference: Linear (linear.app) — left-rail nav, single content pane,
+     elevated cards over a flat background, one accent on the real primary
+     action only, colored pills for status instead of plain text. */
+  :root{
+    --bg:#0b0d1f; --panel:#0d0f24; --card:#14162e; --field:#191c3b; --line:#272b52;
+    --text:#f1effa; --muted:#8d8ab8; --faint:#5a5a86;
+    --accent:#e8a33d; --accent-ink:#2a1900; --accent2:#a99bf0;
+    --danger:#e2574c; --success:#4fc98f;
+  }
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
-  header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--card)}
-  header h1{font-size:14px;font-weight:700;letter-spacing:.02em;margin:0;color:var(--muted)}
-  main{max-width:900px;margin:0 auto;padding:28px 24px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}
-  .card>h3{margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-  input,textarea,select{font:inherit;border-radius:6px;border:1px solid var(--line);background:var(--field);color:var(--text);padding:9px 10px}
+  .shell{display:flex;min-height:100vh}
+
+  .rail{width:232px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+        display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+  .brand svg{flex:none}
+  .brand span{font-weight:800;font-size:15px;letter-spacing:-.01em}
+  nav.tabs{display:flex;flex-direction:column;gap:2px}
+  nav.tabs button{justify-content:flex-start;gap:10px;background:transparent;border:1px solid transparent;
+        color:var(--muted);font-weight:600;padding:9px 10px;border-radius:7px}
+  nav.tabs button svg{flex:none;opacity:.8}
+  nav.tabs button.active{background:var(--card);color:var(--text);border-color:var(--line)}
+  nav.tabs button:hover:not(.active){background:rgba(255,255,255,.03);color:var(--text)}
+  .rail-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+  #credits{font-size:12px;color:var(--accent2);font-weight:700;letter-spacing:.02em}
+
+  main{flex:1;min-width:0;padding:36px 44px;max-width:860px}
+  .view{display:none}
+  .view.active{display:block}
+  .view-head{margin-bottom:22px}
+  .view-head h2{margin:0 0 4px;font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .view-head p{margin:0;color:var(--muted);font-size:13.5px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:18px;
+        box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px -16px rgba(0,0,0,.5)}
+  .card>h3{margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+
+  input,textarea,select{font:inherit;border-radius:7px;border:1px solid var(--line);background:var(--field);color:var(--text);padding:10px 11px}
   input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
-  button{font:inherit;border-radius:6px;padding:9px 14px;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600}
+  textarea{width:100%;resize:vertical}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+
+  button{font:inherit;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;padding:10px 16px;
+        cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600;transition:border-color .12s,background .12s}
   button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  button.primary:hover:not(:disabled){filter:brightness(1.08)}
+  button:hover:not(:disabled):not(.primary){border-color:var(--faint)}
   button.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
   button:disabled{opacity:.5;cursor:not-allowed}
-  textarea{width:100%;resize:vertical}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+  button.sm{padding:6px 11px;font-size:13px}
+
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .row>div{flex:1;min-width:160px}
-  table{width:100%;border-collapse:collapse}
-  th{text-align:left;padding:8px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
-  td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:14px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:var(--field);color:var(--accent2)}
+
+  .app-list{display:flex;flex-direction:column;gap:10px}
+  .app-row{display:flex;align-items:center;gap:14px;background:var(--field);border:1px solid var(--line);
+        border-radius:10px;padding:14px 16px;border-left:3px solid var(--line)}
+  .app-row[data-status="interview"]{border-left-color:var(--accent)}
+  .app-row[data-status="offer"]{border-left-color:var(--success)}
+  .app-row[data-status="rejected"],.app-row[data-status="withdrawn"]{border-left-color:var(--faint);opacity:.75}
+  .app-avatar{width:36px;height:36px;border-radius:9px;background:var(--line);display:flex;align-items:center;justify-content:center;
+        font-weight:800;font-size:13px;color:var(--text);flex:none}
+  .app-main{flex:1;min-width:0}
+  .app-main .company{font-weight:700;font-size:14.5px}
+  .app-main .role{color:var(--muted);font-size:13px}
+  .fit{font-size:12.5px;color:var(--muted);width:52px;text-align:center;flex:none}
+  .fit b{color:var(--text)}
+  select.statusSel{font-size:12.5px;padding:6px 8px;min-width:112px;flex:none}
+  .app-actions{display:flex;gap:6px;flex:none}
+
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--field);color:var(--accent2)}
   .muted{color:var(--muted)}
   .hidden{display:none !important}
-  #credits{font-size:13px;color:var(--accent2)}
-  pre{white-space:pre-wrap;background:var(--field);padding:12px;border-radius:6px;border:1px solid var(--line)}
-  .err{color:var(--danger);font-size:13px;margin-top:6px}
-  #detail{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
-  #detail .box{background:var(--card);border:1px solid var(--line);border-radius:8px;max-width:700px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+  .empty{color:var(--faint);font-size:13.5px;padding:18px 0;text-align:center}
+  pre{white-space:pre-wrap;background:var(--field);padding:14px;border-radius:8px;border:1px solid var(--line);font-size:13px}
+  .err{color:var(--danger);font-size:13px;margin-top:8px}
+
+  #detail{position:fixed;inset:0;background:rgba(5,6,16,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+  #detail .box{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:24px}
+  #detail .box h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:18px 0 6px}
 </style>
 </head>
 <body>
-<header>
-  <h1>AI Job Search Buddy</h1>
-  <div id="who" class="row" style="gap:8px;align-items:center"></div>
-</header>
-<main>
-  <div id="auth" class="card hidden">
-    <div class="row">
-      <div><label>Email</label><input id="email" type="email"></div>
-      <div><label>Password</label><input id="password" type="password"></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button id="loginBtn" class="primary">Log in</button>
-      <button id="signupBtn">Sign up</button>
-    </div>
-    <div id="authErr" class="err"></div>
-  </div>
-
-  <div id="app" class="hidden">
-    <div class="card">
-      <label>Your profile / CV (plain text — used for every evaluation and tailored letter)</label>
-      <textarea id="profile" rows="6" placeholder="Paste your CV / background here..."></textarea>
-      <div class="row" style="margin-top:8px">
-        <button id="saveProfile">Save profile</button>
-        <span id="profileSaved" class="muted"></span>
+<div class="shell">
+  <aside class="rail" id="railAuthed"></aside>
+  <main>
+    <div id="auth" class="card hidden" style="max-width:360px;margin-top:10vh">
+      <h3 style="margin-top:0">Sign in</h3>
+      <div class="row"><div><label>Email</label><input id="email" type="email"></div></div>
+      <div class="row" style="margin-top:10px"><div><label>Password</label><input id="password" type="password"></div></div>
+      <div class="row" style="margin-top:14px">
+        <button id="loginBtn" class="primary">Log in</button>
+        <button id="signupBtn">Sign up</button>
       </div>
+      <div id="authErr" class="err"></div>
     </div>
 
-    <div class="card">
-      <h3 style="margin-top:0">Add application</h3>
-      <div class="row">
-        <div><label>Company</label><input id="newCompany"></div>
-        <div><label>Role</label><input id="newRole"></div>
-      </div>
-      <label style="margin-top:8px">Job posting text</label>
-      <textarea id="newPosting" rows="4"></textarea>
-      <div class="row" style="margin-top:8px"><button id="addApp" class="primary">Add</button></div>
-      <div id="addErr" class="err"></div>
-    </div>
+    <div id="app" class="hidden">
+      <section id="view-profile" class="view">
+        <div class="view-head"><h2>Profile</h2><p>Your CV / background — used for every evaluation and tailored letter.</p></div>
+        <div class="card">
+          <textarea id="profile" rows="10" placeholder="Paste your CV / background here..."></textarea>
+          <div class="row" style="margin-top:12px">
+            <button id="saveProfile" class="primary">Save profile</button>
+            <span id="profileSaved" class="muted"></span>
+          </div>
+        </div>
+      </section>
 
-    <div class="card">
-      <h3 style="margin-top:0">Applications</h3>
-      <table id="appsTable">
-        <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Fit</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <section id="view-add" class="view">
+        <div class="view-head"><h2>Add application</h2><p>Paste a job posting to start tracking it.</p></div>
+        <div class="card">
+          <div class="row">
+            <div><label>Company</label><input id="newCompany"></div>
+            <div><label>Role</label><input id="newRole"></div>
+          </div>
+          <label style="margin-top:12px">Job posting text</label>
+          <textarea id="newPosting" rows="6"></textarea>
+          <div class="row" style="margin-top:12px"><button id="addApp" class="primary">Add application</button></div>
+          <div id="addErr" class="err"></div>
+        </div>
+      </section>
+
+      <section id="view-apps" class="view active">
+        <div class="view-head"><h2>Applications</h2><p>Everything you're tracking, newest first.</p></div>
+        <div class="card">
+          <div id="appsList" class="app-list"></div>
+        </div>
+      </section>
     </div>
-  </div>
-</main>
+  </main>
+</div>
 
 <div id="detail" class="hidden"><div class="box">
-  <div class="row" style="justify-content:space-between"><h3 id="detailTitle" style="margin:0"></h3><button id="closeDetail">Close</button></div>
+  <div class="row" style="justify-content:space-between"><h3 id="detailTitle" style="margin:0;text-transform:none;font-size:17px;letter-spacing:0;color:var(--text)"></h3><button class="sm" id="closeDetail">Close</button></div>
   <div id="detailBody"></div>
 </div></div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 let CFG = null;
+
+const RAIL_ICON = `<svg width="26" height="26" viewBox="0 0 120 120"><circle cx="60" cy="60" r="58" fill="#1D2048"/><g transform="translate(28,30)"><ellipse cx="34" cy="40" rx="30" ry="22" fill="#E8A33D"/><path d="M58 32 L84 20 L78 42 Z" fill="#E8A33D"/><circle cx="16" cy="24" r="18" fill="#E8A33D"/><path d="M2 12 L10 -8 L20 12 Z" fill="#E8A33D"/><path d="M16 12 L26 -6 L30 14 Z" fill="#E8A33D"/><path d="M0 24 Q12 32 20 24 Q16 38 6 36 Q0 32 0 24 Z" fill="#F1EFFA"/><circle cx="9" cy="22" r="2.2" fill="#1D2048"/></g></svg>`;
+const ICONS = {
+  profile: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  add: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  list: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+};
+
+function esc(s) { return (s || "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function initials(name) {
+  return (name || "?").trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || "").join("") || "?";
+}
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -110,23 +172,36 @@ async function api(path, opts = {}) {
   return data;
 }
 
-function esc(s) { return (s || "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
-
 async function boot() {
   CFG = await api("/api/config");
+  buildRail();
   if (CFG.mode === "local") {
     $("#auth").classList.add("hidden");
     await showApp();
   } else {
-    try {
-      await refreshMe();
-      await showApp();
-    } catch {
-      $("#auth").classList.remove("hidden");
-    }
+    try { await refreshMe(); await showApp(); }
+    catch { $("#auth").classList.remove("hidden"); }
   }
   wireAuth();
   wireApp();
+}
+
+function buildRail() {
+  $("#railAuthed").innerHTML = `
+    <div class="brand">${RAIL_ICON}<span>Job Search Buddy</span></div>
+    <nav class="tabs">
+      <button data-view="apps" class="active">${ICONS.list} Applications</button>
+      <button data-view="add">${ICONS.add} Add application</button>
+      <button data-view="profile">${ICONS.profile} Profile</button>
+    </nav>
+    <div class="rail-footer" id="who"></div>`;
+  $("#railAuthed").querySelectorAll("[data-view]").forEach(b =>
+    b.addEventListener("click", () => switchView(b.dataset.view)));
+}
+
+function switchView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === `view-${name}`));
+  document.querySelectorAll("nav.tabs [data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === name));
 }
 
 async function refreshMe() {
@@ -137,23 +212,20 @@ async function refreshMe() {
 }
 
 function renderWho(me) {
-  $("#who").innerHTML = CFG.mode === "local" ? "" :
-    `<span id="credits">${me.credits} credits</span>
-     ${CFG.billing_enabled ? Object.entries(CFG.packs).map(([id,p]) =>
-        `<button class="primary" data-pack="${id}">Buy ${p.label}</button>`).join("") : ""}
-     <button id="logoutBtn">Log out</button>`;
-  if (!CFG.billing_enabled === false) {
-    $("#who").querySelectorAll("[data-pack]").forEach(b =>
-      b.addEventListener("click", () => buy(b.dataset.pack)));
-  }
+  const who = $("#who");
+  if (CFG.mode === "local") { who.innerHTML = ""; return; }
+  who.innerHTML = `
+    <span id="credits">${me.credits} credits</span>
+    ${CFG.billing_enabled ? Object.entries(CFG.packs).map(([id,p]) =>
+        `<button class="primary sm" data-pack="${id}">Buy ${p.label}</button>`).join("") : ""}
+    <button class="sm" id="logoutBtn">Log out</button>`;
+  who.querySelectorAll("[data-pack]").forEach(b => b.addEventListener("click", () => buy(b.dataset.pack)));
   const lo = $("#logoutBtn"); if (lo) lo.addEventListener("click", async () => { await api("/api/logout", {method:"POST"}); location.reload(); });
 }
 
 async function buy(pack) {
-  try {
-    const { url } = await api("/api/billing/checkout", { method: "POST", body: { pack } });
-    location.href = url;
-  } catch (e) { alert(e.message); }
+  try { const { url } = await api("/api/billing/checkout", { method: "POST", body: { pack } }); location.href = url; }
+  catch (e) { alert(e.message); }
 }
 
 function wireAuth() {
@@ -186,6 +258,7 @@ function wireApp() {
       }});
       $("#newCompany").value = $("#newRole").value = $("#newPosting").value = "";
       await loadApps();
+      switchView("apps");
     } catch (e) { $("#addErr").textContent = e.message; }
   };
   $("#closeDetail").onclick = () => $("#detail").classList.add("hidden");
@@ -193,41 +266,47 @@ function wireApp() {
 
 async function loadApps() {
   const apps = await api("/api/applications");
-  const tbody = $("#appsTable tbody");
-  tbody.innerHTML = apps.map(a => `
-    <tr>
-      <td>${esc(a.company)}</td>
-      <td>${esc(a.role)}</td>
-      <td>
-        <select data-id="${a.id}" class="statusSel">
-          ${CFG.statuses.map(s => `<option value="${s}" ${s===a.status?"selected":""}>${s}</option>`).join("")}
-        </select>
-      </td>
-      <td>${a.fit_score ?? "—"}</td>
-      <td class="row" style="gap:6px">
-        <button data-open="${a.id}">Open</button>
-        <button class="danger" data-del="${a.id}">Delete</button>
-      </td>
-    </tr>`).join("") || `<tr><td colspan="5" class="muted">No applications yet.</td></tr>`;
+  const list = $("#appsList");
+  if (!apps.length) {
+    list.innerHTML = `<div class="empty">No applications yet — add one to get started.</div>`;
+    return;
+  }
+  list.innerHTML = apps.map(a => `
+    <div class="app-row" data-status="${a.status}">
+      <div class="app-avatar">${esc(initials(a.company))}</div>
+      <div class="app-main">
+        <div class="company">${esc(a.company)}</div>
+        <div class="role">${esc(a.role)}</div>
+      </div>
+      <div class="fit">${a.fit_score != null ? `<b>${a.fit_score}</b>%` : "—"}</div>
+      <select data-id="${a.id}" class="statusSel">
+        ${CFG.statuses.map(s => `<option value="${s}" ${s===a.status?"selected":""}>${s}</option>`).join("")}
+      </select>
+      <div class="app-actions">
+        <button class="sm" data-open="${a.id}">Open</button>
+        <button class="sm danger" data-del="${a.id}">Delete</button>
+      </div>
+    </div>`).join("");
 
-  tbody.querySelectorAll(".statusSel").forEach(sel =>
+  list.querySelectorAll(".statusSel").forEach(sel =>
     sel.addEventListener("change", async () => {
       await api(`/api/applications/${sel.dataset.id}`, {method:"PATCH", body:{status: sel.value}});
+      sel.closest(".app-row").dataset.status = sel.value;
     }));
-  tbody.querySelectorAll("[data-del]").forEach(b =>
+  list.querySelectorAll("[data-del]").forEach(b =>
     b.addEventListener("click", async () => {
       if (!confirm("Delete this application?")) return;
       await api(`/api/applications/${b.dataset.del}`, {method:"DELETE"});
       await loadApps();
     }));
-  tbody.querySelectorAll("[data-open]").forEach(b =>
+  list.querySelectorAll("[data-open]").forEach(b =>
     b.addEventListener("click", () => openDetail(apps.find(a => a.id == b.dataset.open))));
 }
 
 function openDetail(a) {
   $("#detailTitle").textContent = `${a.company} — ${a.role}`;
   $("#detailBody").innerHTML = `
-    <div class="row" style="margin:10px 0">
+    <div class="row" style="margin:10px 0 0">
       <button id="evalBtn">Evaluate fit${CFG.mode!=="local" ? ` (${CFG.costs.evaluate} credit)` : ""}</button>
       <button id="applyBtn" class="primary">Tailor CV + cover letter${CFG.mode!=="local" ? ` (${CFG.costs.apply} credits)` : ""}</button>
     </div>
