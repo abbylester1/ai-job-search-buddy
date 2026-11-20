@@ -59,8 +59,6 @@ Sixty-nine tailored applications, twenty first interviews, and one signed contra
 
 <p align="center">
   <a href="https://github.com/sponsors/abbylester1"><img src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?style=flat&logo=githubsponsors" alt="Sponsor on GitHub" height="28"></a>
-  &nbsp;
-  <a href="https://ko-fi.com/YOUR_KOFI_USERNAME"><img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Buy me a coffee at ko-fi.com" height="28"></a>
 </p>
 
 ## What this is
