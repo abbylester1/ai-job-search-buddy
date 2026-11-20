@@ -172,6 +172,15 @@ def refund(user_id: int, action: str):
 # ---------- pages ----------
 @app.get("/")
 def index():
+    # Local mode is a personal single-user tool - skip the marketing page
+    # and go straight to the dashboard. Hosted mode gets a real landing page.
+    if MODE == "local":
+        return send_from_directory(BASE / "static", "index.html")
+    return send_from_directory(BASE / "static", "landing.html")
+
+
+@app.get("/app")
+def dashboard():
     return send_from_directory(BASE / "static", "index.html")
 
 

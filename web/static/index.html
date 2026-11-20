@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Job Search Buddy</title>
+<script>
+  // Set before first paint to avoid a flash of the wrong theme.
+  try {
+    const t = localStorage.getItem("theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch {}
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='58' fill='%231D2048'/%3E%3Cg transform='translate(28,30)'%3E%3Cellipse cx='34' cy='40' rx='30' ry='22' fill='%23E8A33D'/%3E%3Cpath d='M58 32 L84 20 L78 42 Z' fill='%23E8A33D'/%3E%3Ccircle cx='16' cy='24' r='18' fill='%23E8A33D'/%3E%3Cpath d='M2 12 L10 -8 L20 12 Z' fill='%23E8A33D'/%3E%3Cpath d='M16 12 L26 -6 L30 14 Z' fill='%23E8A33D'/%3E%3Cpath d='M0 24 Q12 32 20 24 Q16 38 6 36 Q0 32 0 24 Z' fill='%23F1EFFA'/%3E%3Ccircle cx='9' cy='22' r='2.2' fill='%231D2048'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* Reference: Linear (linear.app) — left-rail nav, single content pane,
@@ -13,7 +20,23 @@
     --bg:#0b0d1f; --panel:#0d0f24; --card:#14162e; --field:#191c3b; --line:#272b52;
     --text:#f1effa; --muted:#8d8ab8; --faint:#5a5a86;
     --accent:#e8a33d; --accent-ink:#2a1900; --accent2:#a99bf0;
-    --danger:#e2574c; --success:#4fc98f;
+    --danger:#e2574c; --success:#2e9e63;
+  }
+  /* Default follows the OS preference; an explicit data-theme attribute
+     (set by the toggle, persisted in localStorage) always wins. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg:#f6f5fb; --panel:#ffffff; --card:#ffffff; --field:#f1f0f9; --line:#e2e0f0;
+      --text:#1d2048; --muted:#67638c; --faint:#9a97b8;
+      --accent:#d98a1f; --accent-ink:#ffffff; --accent2:#6d4fd1;
+      --danger:#c23b31; --success:#1f7a4d;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f5fb; --panel:#ffffff; --card:#ffffff; --field:#f1f0f9; --line:#e2e0f0;
+    --text:#1d2048; --muted:#67638c; --faint:#9a97b8;
+    --accent:#d98a1f; --accent-ink:#ffffff; --accent2:#6d4fd1;
+    --danger:#c23b31; --success:#1f7a4d;
   }
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -194,9 +217,29 @@ function buildRail() {
       <button data-view="add">${ICONS.add} Add application</button>
       <button data-view="profile">${ICONS.profile} Profile</button>
     </nav>
-    <div class="rail-footer" id="who"></div>`;
+    <div class="rail-footer">
+      <button class="sm" id="themeToggle" style="align-self:flex-start"></button>
+      <div id="who"></div>
+    </div>`;
   $("#railAuthed").querySelectorAll("[data-view]").forEach(b =>
     b.addEventListener("click", () => switchView(b.dataset.view)));
+  $("#themeToggle").addEventListener("click", toggleTheme);
+  updateThemeToggleLabel();
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme")
+    || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("theme", next);
+  updateThemeToggleLabel();
+}
+
+function updateThemeToggleLabel() {
+  const current = document.documentElement.getAttribute("data-theme")
+    || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  $("#themeToggle").textContent = current === "light" ? "🌙 Dark mode" : "☀️ Light mode";
 }
 
 function switchView(name) {

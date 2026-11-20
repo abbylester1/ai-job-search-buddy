@@ -19,9 +19,19 @@ python app.py
 ```
 
 Open http://127.0.0.1:5050. No signup — paste your profile, add applications,
-evaluate/tailor.
+evaluate/tailor. Local mode skips the landing page and goes straight to the
+dashboard (`web/static/index.html`); it's a single-user tool, so there's
+nothing to market.
+
+A dark/light toggle lives in the dashboard's sidebar; it follows the OS
+preference by default and remembers your choice in the browser
+(`localStorage`, so it won't follow you across devices).
 
 ## Hosted mode
+
+In hosted mode, `/` serves a marketing landing page
+(`web/static/landing.html`) and the dashboard moves to `/app`. Both honor the
+same dark/light toggle and preference.
 
 ```bash
 cp .env.example .env   # fill in ANTHROPIC_API_KEY, SECRET_KEY at minimum
