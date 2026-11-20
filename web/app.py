@@ -141,15 +141,17 @@ def csrf_guard():
 
 
 def spend(user_id: int, action: str) -> bool:
-    """Atomically deduct credits. Returns False if balance too low."""
+    """Atomically deduct credits and log it. Returns False if balance too low."""
     if MODE == "local":
         return True
     cost = COSTS[action]
     conn = db()
+    conn.execute("BEGIN IMMEDIATE")
     cur = conn.execute(
         "UPDATE users SET credits = credits - ? WHERE id=? AND credits >= ?", (cost, user_id, cost)
     )
     if cur.rowcount == 0:
+        conn.rollback()
         return False
     conn.execute("INSERT INTO ledger (user_id, delta, reason) VALUES (?,?,?)", (user_id, -cost, action))
     conn.commit()
@@ -161,6 +163,7 @@ def refund(user_id: int, action: str):
         return
     cost = COSTS[action]
     conn = db()
+    conn.execute("BEGIN IMMEDIATE")
     conn.execute("UPDATE users SET credits = credits + ? WHERE id=?", (cost, user_id))
     conn.execute("INSERT INTO ledger (user_id, delta, reason) VALUES (?,?,?)", (user_id, cost, f"refund:{action}"))
     conn.commit()
@@ -385,6 +388,7 @@ def webhook():
         return err(str(e), 400)
     if grant:
         conn = db()
+        conn.execute("BEGIN IMMEDIATE")
         try:
             conn.execute("INSERT INTO ledger (user_id, delta, reason, ref) VALUES (?,?,?,?)",
                          (grant["user_id"], grant["credits"], "purchase", grant["ref"]))
