@@ -16,6 +16,7 @@ from pathlib import Path
 from flask import Flask, g, jsonify, request, send_from_directory, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import ai
@@ -41,6 +42,21 @@ app.config.update(
     MAX_CONTENT_LENGTH=2 * 1024 * 1024,
 )
 
+# If deployed behind a reverse proxy/load balancer (recommended - see
+# web/README.md), set TRUSTED_PROXY_HOPS to how many proxies sit in front of
+# this process, so request.remote_addr (and therefore the rate limiter and
+# the per-IP signup cap below) reads the real client IP from X-Forwarded-For
+# instead of the proxy's own address. Leave at 0 if this process is reached
+# directly (e.g. local mode, or a platform that already strips/rewrites
+# X-Forwarded-For before this process sees it).
+_proxy_hops = int(os.environ.get("TRUSTED_PROXY_HOPS", "0"))
+if _proxy_hops > 0:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_proxy_hops, x_proto=1, x_host=1)
+
+# In-memory storage: per-process only. Fine for a single-worker deployment
+# (see README - run with `gunicorn -w 1`, or point storage_uri at Redis if
+# you scale to multiple workers/processes, or the limits below won't be
+# shared across them).
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=[])
 
 SCHEMA = """
@@ -62,7 +78,7 @@ CREATE TABLE IF NOT EXISTS ledger (
 
 def db() -> sqlite3.Connection:
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, isolation_level=None)  # manual transactions (BEGIN IMMEDIATE)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys=ON")
     return g.db
@@ -78,6 +94,13 @@ def close_db(_exc):
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.executescript(SCHEMA)
+        # Idempotent migration: a users table created by an earlier version
+        # of this app (before signup_ip existed) has CREATE TABLE IF NOT
+        # EXISTS skip it silently, leaving the column missing and every
+        # signup erroring. Add it if absent.
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+        if "signup_ip" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN signup_ip TEXT")
         if MODE == "local":
             conn.execute(
                 "INSERT OR IGNORE INTO users (id, email, pw_hash, credits) VALUES (1, 'local@localhost', '!', 0)"
@@ -158,13 +181,6 @@ def config():
 
 
 # ---------- auth ----------
-def _free_signups_today_for_ip(ip: str) -> int:
-    row = db().execute(
-        "SELECT COUNT(*) AS n FROM users WHERE signup_ip=? AND date(created_at)=date('now')", (ip,)
-    ).fetchone()
-    return row["n"] if row else 0
-
-
 @app.post("/api/signup")
 @limiter.limit("5 per hour")
 def signup():
@@ -178,21 +194,28 @@ def signup():
     if len(pw) < 8:
         return err("Password must be at least 8 characters")
     ip = get_remote_address()
-    # Same IP has already collected its daily share of free credits - the
-    # account can still be created, it just starts at 0 (no AI spend until
-    # the user pays or the limit resets).
-    grant = FREE_CREDITS if _free_signups_today_for_ip(ip) < MAX_FREE_SIGNUPS_PER_IP_PER_DAY else 0
+    pw_hash = generate_password_hash(pw)
     conn = db()
     try:
+        # BEGIN IMMEDIATE takes the write lock up front, so the count of
+        # today's signups from this IP and the insert that acts on it happen
+        # as one atomic step - two concurrent signups from the same IP can't
+        # both read "under the cap" and both get a free grant (TOCTOU).
+        conn.execute("BEGIN IMMEDIATE")
+        n = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE signup_ip=? AND date(created_at)=date('now')", (ip,)
+        ).fetchone()["n"]
+        grant = FREE_CREDITS if n < MAX_FREE_SIGNUPS_PER_IP_PER_DAY else 0
         cur = conn.execute(
             "INSERT INTO users (email, pw_hash, credits, signup_ip) VALUES (?,?,?,?)",
-            (email, generate_password_hash(pw), grant, ip),
+            (email, pw_hash, grant, ip),
         )
         if grant:
             conn.execute("INSERT INTO ledger (user_id, delta, reason) VALUES (?,?,?)",
                          (cur.lastrowid, grant, "signup_bonus"))
         conn.commit()
     except sqlite3.IntegrityError:
+        conn.rollback()
         return err("Account already exists")
     session.clear()
     session["uid"] = cur.lastrowid

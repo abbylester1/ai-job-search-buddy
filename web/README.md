@@ -38,11 +38,19 @@ To enable paid top-ups:
    `checkout.session.completed`, grab its signing secret.
 3. Set both in `.env`. Credit packs are defined in `billing.py` (`PACKS`).
 
-In production run behind `gunicorn` and a reverse proxy with TLS:
+In production run behind `gunicorn` and a reverse proxy with TLS. Set
+`TRUSTED_PROXY_HOPS=1` (or however many proxies sit in front of the app) so
+rate limiting and the per-IP signup cap see the real client IP from
+`X-Forwarded-For` instead of the proxy's own address:
 
 ```bash
-gunicorn -w 2 -b 127.0.0.1:5050 app:app
+TRUSTED_PROXY_HOPS=1 gunicorn -w 1 -b 127.0.0.1:5050 app:app
 ```
+
+Keep `-w 1` (one worker): the rate limiter and signup cap use in-process
+memory, so running multiple workers lets each one track its own counters
+instead of sharing them, weakening both limits. For more than one worker,
+point `Limiter(..., storage_uri=...)` in `app.py` at Redis first.
 
 `DATABASE_PATH` is a SQLite file — fine for one small deployment; swap in
 Postgres if you outgrow it.
