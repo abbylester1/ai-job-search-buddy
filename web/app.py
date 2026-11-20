@@ -14,6 +14,8 @@ from functools import wraps
 from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory, session
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import ai
@@ -23,6 +25,10 @@ BASE = Path(__file__).parent
 MODE = os.environ.get("APP_MODE", "hosted").lower()
 DB_PATH = os.environ.get("DATABASE_PATH", str(BASE / "buddy.db"))
 FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "10"))
+# Cap how many free-signup bonuses one IP can collect per day - signing up
+# repeatedly for free AI credits is the main abuse case for an unverified
+# account. Past this limit the account is created but starts at 0 credits.
+MAX_FREE_SIGNUPS_PER_IP_PER_DAY = int(os.environ.get("MAX_FREE_SIGNUPS_PER_IP_PER_DAY", "3"))
 COSTS = {"evaluate": 1, "apply": 3}
 STATUSES = ["drafted", "applied", "interview", "offer", "rejected", "withdrawn"]
 
@@ -35,11 +41,13 @@ app.config.update(
     MAX_CONTENT_LENGTH=2 * 1024 * 1024,
 )
 
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=[])
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, pw_hash TEXT NOT NULL,
   credits INTEGER NOT NULL DEFAULT 0, profile TEXT NOT NULL DEFAULT '',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+  signup_ip TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),
   company TEXT NOT NULL, role TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'drafted',
@@ -150,7 +158,15 @@ def config():
 
 
 # ---------- auth ----------
+def _free_signups_today_for_ip(ip: str) -> int:
+    row = db().execute(
+        "SELECT COUNT(*) AS n FROM users WHERE signup_ip=? AND date(created_at)=date('now')", (ip,)
+    ).fetchone()
+    return row["n"] if row else 0
+
+
 @app.post("/api/signup")
+@limiter.limit("5 per hour")
 def signup():
     if MODE == "local":
         return err("Not needed in local mode")
@@ -161,14 +177,20 @@ def signup():
         return err("Enter a valid email")
     if len(pw) < 8:
         return err("Password must be at least 8 characters")
+    ip = get_remote_address()
+    # Same IP has already collected its daily share of free credits - the
+    # account can still be created, it just starts at 0 (no AI spend until
+    # the user pays or the limit resets).
+    grant = FREE_CREDITS if _free_signups_today_for_ip(ip) < MAX_FREE_SIGNUPS_PER_IP_PER_DAY else 0
     conn = db()
     try:
         cur = conn.execute(
-            "INSERT INTO users (email, pw_hash, credits) VALUES (?,?,?)",
-            (email, generate_password_hash(pw), FREE_CREDITS),
+            "INSERT INTO users (email, pw_hash, credits, signup_ip) VALUES (?,?,?,?)",
+            (email, generate_password_hash(pw), grant, ip),
         )
-        conn.execute("INSERT INTO ledger (user_id, delta, reason) VALUES (?,?,?)",
-                     (cur.lastrowid, FREE_CREDITS, "signup_bonus"))
+        if grant:
+            conn.execute("INSERT INTO ledger (user_id, delta, reason) VALUES (?,?,?)",
+                         (cur.lastrowid, grant, "signup_bonus"))
         conn.commit()
     except sqlite3.IntegrityError:
         return err("Account already exists")
@@ -178,6 +200,7 @@ def signup():
 
 
 @app.post("/api/login")
+@limiter.limit("10 per minute")
 def login():
     if MODE == "local":
         return err("Not needed in local mode")
@@ -323,7 +346,7 @@ def checkout():
         return err("Billing is not enabled")
     pack = request.get_json().get("pack")
     try:
-        url = billing.checkout_url(pack, g.user["id"], request.host_url)
+        url = billing.checkout_url(pack, g.user["id"])
     except KeyError:
         return err("Unknown pack")
     return jsonify({"url": url})

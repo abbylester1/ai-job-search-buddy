@@ -1,4 +1,5 @@
 flask>=3.0
+flask-limiter>=3.8
 anthropic>=1.0
 stripe>=10.0
 gunicorn>=22.0

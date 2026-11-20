@@ -15,7 +15,11 @@ class WebhookError(Exception):
 
 
 def enabled() -> bool:
-    return bool(os.environ.get("STRIPE_SECRET_KEY") and os.environ.get("STRIPE_WEBHOOK_SECRET"))
+    return bool(
+        os.environ.get("STRIPE_SECRET_KEY")
+        and os.environ.get("STRIPE_WEBHOOK_SECRET")
+        and os.environ.get("PUBLIC_URL")
+    )
 
 
 def _stripe():
@@ -25,9 +29,11 @@ def _stripe():
     return stripe
 
 
-def checkout_url(pack_id: str, user_id: int, host_url: str) -> str:
+def checkout_url(pack_id: str, user_id: int) -> str:
     pack = PACKS[pack_id]
-    base = os.environ.get("PUBLIC_URL", host_url).rstrip("/")
+    # Never derive the redirect base from the request (Host header injection /
+    # open redirect). PUBLIC_URL must be set explicitly in hosted mode.
+    base = os.environ["PUBLIC_URL"].rstrip("/")
     s = _stripe().checkout.Session.create(
         mode="payment",
         line_items=[{
